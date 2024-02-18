@@ -1,0 +1,44 @@
+import pandas as pd
+
+# Assuming your original DataFrame is named df
+# First, convert 'ds' column to datetime format
+df['ds'] = pd.to_datetime(df['ds'])
+
+# Extract hour from 'ds' column to create equivalent hour columns
+df['hour'] = df['ds'].dt.hour
+
+# Group by 'day' and calculate maximum 'y' for each day
+max_y_per_day = df.groupby(df['ds'].dt.date)['y'].max().reset_index()
+max_y_per_day.rename(columns={'ds': 'day', 'y': 'y_max'}, inplace=True)
+
+# Create columns for temperatures at specific hours
+temp_at_hours = df.pivot(index='ds', columns='hour', values='Temp').add_prefix('Temp_')
+temp_at_hours.columns = [f"Temp_{hour:02}" for hour in temp_at_hours.columns]
+
+# Similarly, create columns for other exogenous variables at specific hours
+# Replace 'Temp' with other column names like 'Wilg', 'Wiatr', 'Zachm', 'Nasl', 'Opad', 'Solar_Angle' accordingly
+# Replace 'Temp_' with corresponding prefixes for other variables
+wilg_at_hours = df.pivot(index='ds', columns='hour', values='Wilg').add_prefix('Wilg_')
+wiatr_at_hours = df.pivot(index='ds', columns='hour', values='Wiatr').add_prefix('Wiatr_')
+zachm_at_hours = df.pivot(index='ds', columns='hour', values='Zachm').add_prefix('Zachm_')
+nasl_at_hours = df.pivot(index='ds', columns='hour', values='Nasl').add_prefix('Nasl_')
+opad_at_hours = df.pivot(index='ds', columns='hour', values='Opad').add_prefix('Opad_')
+solar_angle_at_hours = df.pivot(index='ds', columns='hour', values='Solar_Angle').add_prefix('Solar_Angle_')
+
+# Merge all DataFrames on 'ds' to get the final DataFrame
+new_df = max_y_per_day.merge(temp_at_hours, left_on='day', right_index=True)
+new_df = new_df.merge(wilg_at_hours, left_on='day', right_index=True)
+new_df = new_df.merge(wiatr_at_hours, left_on='day', right_index=True)
+new_df = new_df.merge(zachm_at_hours, left_on='day', right_index=True)
+new_df = new_df.merge(nasl_at_hours, left_on='day', right_index=True)
+new_df = new_df.merge(opad_at_hours, left_on='day', right_index=True)
+new_df = new_df.merge(solar_angle_at_hours, left_on='day', right_index=True)
+
+# Drop unnecessary columns
+new_df.drop(columns=['ds', 'hour'], inplace=True)
+
+# Reorder columns as per requirement
+new_df = new_df[['day', 'y_max'] + sorted(new_df.columns[2:])]
+
+# Display the new DataFrame
+print(new_df)
