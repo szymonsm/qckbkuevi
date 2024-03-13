@@ -1,0 +1,2 @@
+'CREATE TABLE articles
+             (id integer primary key, title text, date date, keywords text, text text, is_premium boolean, source_site text, url text, summary text, sentiment text, reasonings text, tag text)''')
